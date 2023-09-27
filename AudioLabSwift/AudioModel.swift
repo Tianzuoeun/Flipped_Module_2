@@ -2,7 +2,7 @@
 //  AudioModel.swift
 //  AudioLabSwift
 //
-//  Created by Eric Larson 
+//  Created by Eric Larson
 //  Copyright © 2020 Eric Larson. All rights reserved.
 //
 
@@ -89,11 +89,73 @@ class AudioModel {
     func wasPlaying() -> Bool {
         return isPlaying
     }
-   
+    
+   // toggle playing
+    func togglePlaying(){
+        if let manager = self.audioManager ,
+           let reader = self.fileReader {
+            if manager.playing{
+                //pause audio processing
+                manager.pause()
+                //stop buffering the song
+                reader.pause()
+            }
+            else{
+                //start both
+                manager.play()
+                reader.play()
+            }
+        }
+    }
+    func playmusic() {
+        if let manager = self.audioManager,
+           let reader = self.fileReader, !isPlaying {
+            manager.play()
+            reader.play()
+            isPlaying = true
+            print("start")
+        }}
+    func pausemusic() {
+        if let manager = self.audioManager,
+           let reader = self.fileReader, !isPlaying {
+            manager.pause()
+            reader.pause()
+            isPlaying = true
+            print("start")
+            
+        }
+    }
+            func setVolumne(val:Float){
+                self.volume = val
+            }
+    // play from a file reder file
+    func startProcesingAudilFileForPlayback(){
+        //set the output block to read from and play the audio file
+        if let manager = self.audioManager,
+           let fileReader = self.fileReader{
+            manager.outputBlock = self.handleSpeakerQueryWithAudioFile
+            fileReader.play()
+            
+        }
+    }
+    
     //==========================================
     // MARK: Private Properties
+    private var volume: Float = 1.0 // internal storage for volume
     private lazy var audioManager:Novocaine? = {
         return Novocaine.audioManager()
+    }()
+    // find song in the main bundle
+    private lazy var fileReader:AudioFileReader? = {
+        if let url = Bundle.main.url(forResource: "satisfaction", withExtension: "mp3"){
+            var tmpFileReader: AudioFileReader? = AudioFileReader.init(audioFileURL: url, samplingRate: Float(audioManager!.samplingRate), numChannels: audioManager!.numOutputChannels)
+            tmpFileReader!.currentTime = 0.0 // start from time zero!
+            print("Audil file successfully loaded for \(url)")
+            return tmpFileReader
+        }else{
+            print("can not initialize audio input file")
+            return nil
+        }
     }()
     
     private lazy var fftHelper:FFTHelper? = {
@@ -140,5 +202,21 @@ class AudioModel {
         self.inputBuffer?.addNewFloatData(data, withNumSamples: Int64(numFrames))
     }
     
-    
+    //handleSpeaker
+    private func handleSpeakerQueryWithAudioFile(data:Optional<UnsafeMutablePointer<Float>>, numFrams:UInt32, numChannels:UInt32){
+        if let file = self.fileReader{
+            if let arrayData = data{
+                //read from file, loading into data
+                file.retrieveFreshAudio(arrayData, numFrames: numFrams, numChannels: numChannels)
+                vDSP_vsmul(arrayData, 1, &(self.volume), arrayData, 1, vDSP_Length(numFrams*numChannels))
+                //convert audio data to swift array
+                let musicdata = Array(UnsafeBufferPointer(start: arrayData, count: Int(numFrams*numChannels)))
+                for i in 0..<musicdata.count {
+                    timeData[i] = musicdata[i]
+                
+                }
+                fftHelper!.performForwardFFT(withData: &timeData,
+                                             andCopydBMagnitudeToBuffer: &fftData)
+            }}
+    }
 }

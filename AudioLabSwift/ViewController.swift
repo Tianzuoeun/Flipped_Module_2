@@ -2,7 +2,7 @@
 //  ViewController.swift
 //  AudioLabSwift
 //
-//  Created by Eric Larson 
+//  Created by Eric Larson
 //  Copyright © 2020 Eric Larson. All rights reserved.
 //
 
@@ -52,10 +52,10 @@ class ViewController: UIViewController {
             graph.makeGrids() // add grids to graph
         }
         
-        // start up the audio model here, querying microphone
-        audio.startMicrophoneProcessing(withFps: 20) // preferred number of FFT calculations per second
+        // start up the audio model here, querying speaker
+        audio.startProcesingAudilFileForPlayback()// play music
 
-        audio.play()
+        audio.togglePlaying()
         
         // run the loop for updating the graph peridocially
         Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
@@ -71,16 +71,16 @@ class ViewController: UIViewController {
         super.viewWillAppear(animated)
         
         if  audio.wasPlaying() {
-            audio.play()
-            
+            audio.playmusic()
+            print(audio.wasPlaying())
         }
     }
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         
-        audio.pause()
-        //print(audio.wasPlaying())//
+        audio.pausemusic()
+        print(audio.wasPlaying())
         
     }
     
